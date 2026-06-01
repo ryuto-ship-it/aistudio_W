@@ -225,10 +225,34 @@ function setupSubmissionsListener() {
   const submissionsRef = collection(db, 'submissions');
   
   onSnapshot(submissionsRef, async (querySnapshot) => {
-    if (querySnapshot.empty) {
-      console.log('Firestore submissions collection is empty. Seeding data...');
-      // Seed data into Firestore submissions collection
-      for (const item of seedSubmissions) {
+    const fetchedSubmissions = [];
+    const existingIds = new Set();
+
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      existingIds.add(docSnap.id);
+      fetchedSubmissions.push({
+        id: docSnap.id,
+        title: data.title,
+        creator: data.creator,
+        wallet: data.wallet,
+        type: data.type,
+        genre: data.genre || undefined,
+        style: data.style || undefined,
+        prompt: data.prompt,
+        mediaUrl: data.mediaUrl,
+        thumbnail: data.thumbnail,
+        votes: data.votes,
+        timestamp: data.timestamp
+      });
+    });
+
+    // Smart seed: Check if any seed items are missing (e.g. newly added video items) and upload them
+    let missingSeeded = false;
+    for (const item of seedSubmissions) {
+      if (!existingIds.has(item.id)) {
+        console.log(`Seeding missing item: ${item.id}`);
+        missingSeeded = true;
         try {
           await setDoc(doc(db, 'submissions', item.id), {
             title: item.title,
@@ -247,17 +271,11 @@ function setupSubmissionsListener() {
           console.error('Error seeding item:', e);
         }
       }
-      return; // The listener will fire again once documents are written
     }
 
-    const fetchedSubmissions = [];
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      fetchedSubmissions.push({
-        id: docSnap.id,
-        ...data
-      });
-    });
+    if (missingSeeded) {
+      return; // Let the next snapshot handle the updated collection state
+    }
 
     submissions = fetchedSubmissions;
     updateGlobalMetrics();
@@ -483,27 +501,110 @@ function handleStudioGeneration(type) {
     studioVideoOutputCard.innerHTML = `
       <div class="loader-wrapper">
         <div class="spinner-neon"></div>
-        <div class="loader-status">Rendering your video...</div>
+        <div class="loader-status" id="videoLoaderStatus">Submitting request to Muapi AI...</div>
       </div>
     `;
 
-    setTimeout(() => {
+    const style = studioVideoStyle.value;
+    const stylePrompts = {
+      'Cinematic': 'highly detailed 8k cinematic footage, gorgeous depth of field, blockbuster movie style, ',
+      'Anime': 'gorgeous modern anime style art, vivid colors, smooth cartoon animations, ',
+      'Realistic': 'photorealistic 4k video, high-fidelity drone capture, hyperrealistic textures, ',
+      'Retro Korean': 'vintage 1990s Korean television drama aesthetic, colorful warm VHS scanlines, nostalgic classic tone, '
+    };
+
+    const stylePrefix = stylePrompts[style] || '';
+    const finalPrompt = `${stylePrefix}${prompt}`;
+    const apiKey = "c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2";
+
+    // Call Muapi Text-to-Video API
+    fetch('https://api.muapi.ai/api/v1/ltx-2-fast-text-to-video', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        prompt: finalPrompt
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('API server returned an error: ' + response.statusText);
+      }
+      return response.json();
+    })
+    .then(data => {
+      if (!data.request_id) {
+        throw new Error('Invalid response structure from Muapi AI.');
+      }
+      const requestId = data.request_id;
+      pollVideoResult(requestId, prompt, style, apiKey);
+    })
+    .catch(err => {
+      console.error('Muapi Generation Error:', err);
       btnGenerateVideoStudio.disabled = false;
-      const style = studioVideoStyle.value;
-      const choice = mockVideoData[style] || mockVideoData['Cinematic'];
-
-      currentlyGeneratedContent = {
-        type: 'video',
-        prompt: prompt,
-        genreOrStyle: style,
-        mediaUrl: choice.url,
-        thumbnail: choice.thumb,
-        titleSuffix: choice.titleSuffix
-      };
-
-      renderVideoResultStudio();
-    }, 2200);
+      studioVideoOutputCard.innerHTML = `
+        <div style="color: #ef4444; padding: 16px;">
+          <p>Generation failed: ${err.message}</p>
+          <button class="btn-neon-ghost purple-ghost" onclick="resetCreatorForms()" style="margin-top: 12px; padding: 8px 16px; font-size: 12px;">Reset</button>
+        </div>
+      `;
+    });
   }
+}
+
+function pollVideoResult(requestId, prompt, style, apiKey) {
+  const statusLabel = document.getElementById('videoLoaderStatus');
+  let pollInterval = setInterval(() => {
+    fetch(`https://api.muapi.ai/api/v1/predictions/${requestId}/result`, {
+      headers: {
+        'x-api-key': apiKey
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      const status = data.status;
+      if (status === 'completed' || status === 'succeeded') {
+        clearInterval(pollInterval);
+        btnGenerateVideoStudio.disabled = false;
+
+        const mediaUrl = (data.outputs && data.outputs.length > 0) 
+          ? data.outputs[0] 
+          : 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4'; // fallback
+
+        currentlyGeneratedContent = {
+          type: 'video',
+          prompt: prompt,
+          genreOrStyle: style,
+          mediaUrl: mediaUrl,
+          thumbnail: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=600&auto=format&fit=crop&q=80',
+          titleSuffix: 'Generated AI Masterpiece'
+        };
+
+        renderVideoResultStudio();
+      } else if (status === 'failed') {
+        clearInterval(pollInterval);
+        throw new Error('Muapi AI processing failed.');
+      } else {
+        // Still processing
+        if (statusLabel) {
+          statusLabel.textContent = `Rendering video (${status || 'processing'})...`;
+        }
+      }
+    })
+    .catch(err => {
+      clearInterval(pollInterval);
+      console.error('Muapi Polling Error:', err);
+      btnGenerateVideoStudio.disabled = false;
+      studioVideoOutputCard.innerHTML = `
+        <div style="color: #ef4444; padding: 16px;">
+          <p>Generation failed during processing: ${err.message}</p>
+          <button class="btn-neon-ghost purple-ghost" onclick="resetCreatorForms()" style="margin-top: 12px; padding: 8px 16px; font-size: 12px;">Reset</button>
+        </div>
+      `;
+    });
+  }, 3000); // Poll every 3 seconds
 }
 
 // ==========================================
@@ -1163,4 +1264,5 @@ function closeDetailModal() {
 // ==========================================
 // 11. BOOTSTRAPPER
 // ==========================================
+window.resetCreatorForms = resetCreatorForms;
 window.addEventListener('DOMContentLoaded', init);
