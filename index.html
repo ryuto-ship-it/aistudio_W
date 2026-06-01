@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WOORI AI Creator's Competition</title>
+  <meta name="description" content="Create K-Culture music or video using state-of-the-art AI, upload your work, and get voted by the community to win $WOORI token rewards.">
+  <script type="module" crossorigin src="./assets/index-6XqsRAgj.js"></script>
+  <link rel="stylesheet" crossorigin href="./assets/index-BVeYcPR4.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <a href="#/" class="brand-logo" id="headerLogo">
+        <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <polygon points="50,15 90,80 10,80" stroke="url(#logoGlow)" stroke-width="6" fill="none"/>
+          <circle cx="50" cy="53" r="18" fill="url(#logoGlow)"/>
+          <defs>
+            <linearGradient id="logoGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#00F5C4"/>
+              <stop offset="100%" stop-color="#8B5CF6"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span>WOORI</span>
+      </a>
+
+      <!-- Navigation Menu -->
+      <nav>
+        <ul class="nav-menu">
+          <li class="nav-item active" id="navHome"><a href="#/">Submissions</a></li>
+          <li class="nav-item" id="navFaq"><a href="#/faq">FAQ</a></li>
+          <li class="nav-item" id="navStudio"><a href="#/ai-studio">AI Creator's Studio</a></li>
+        </ul>
+      </nav>
+
+      <div class="header-actions" style="display: flex; align-items: center; gap: 16px;">
+        <button class="btn-neon-ghost mint-ghost" id="btnConnectWallet" style="padding: 8px 16px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 8px; border-radius: 8px; cursor: pointer; transition: all 0.3s ease;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 18V19C21 20.1 20.1 21 19 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H19C20.1 3 21 3.9 21 5V6H12C10.9 6 10 6.9 10 8V16C10 17.1 10.9 18 12 18H21ZM12 16H22V8H12V16ZM16 13.5C15.17 13.5 14.5 12.83 14.5 12C14.5 11.17 15.17 10.5 16 10.5C16.83 10.5 17.5 11.17 17.5 12C17.5 12.83 16.83 13.5 16 13.5Z"/></svg>
+          <span>Connect Wallet</span>
+        </button>
+        <div class="live-badge">
+          <span class="pulse-dot"></span>
+          <span>Live Competition</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ==========================================
+         PAGE VIEW 1: HOME / LANDING VIEW
+         ========================================== -->
+    <div class="page-view active" id="homePage">
+      <!-- Home Hero -->
+      <section class="hero-section">
+        <div class="hero-stats-bar">
+          <div class="stat-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            <span>Prize Pool:</span>
+            <span class="stat-value">1,000,000 $WOORI</span>
+          </div>
+          <div class="stat-item">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            <span>Total Votes:</span>
+            <span class="stat-value purple-text" id="homeTotalVotes">1,104</span>
+          </div>
+        </div>
+        <h1>AI Creator's Competition</h1>
+        <h2>Create K-Culture content with AI. Upload. Win $WOORI.</h2>
+        <p>
+          Join creators worldwide in shaping the future of Korean Culture. Generate music or video content using our AI toolkits, upload your work, and get voted by the community to win share of $WOORI prizes.
+        </p>
+      </section>
+
+      <!-- Home Submissions Grid Section -->
+      <section class="board-section">
+        <div class="board-header">
+          <div class="board-title-wrap">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="url(#boardGlow1)" stroke-width="2" fill="none"/>
+              <defs>
+                <linearGradient id="boardGlow1" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00F5C4"/>
+                  <stop offset="100%" stop-color="#8B5CF6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="board-title">Submissions</span>
+          </div>
+          <div class="filter-btn-group">
+            <button class="filter-btn active" id="homeSortLatestBtn">Latest</button>
+            <button class="filter-btn" id="homeSortVotedBtn">Top Voted</button>
+          </div>
+        </div>
+
+        <div class="submissions-grid" id="homeSubmissionsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+    </div>
+
+    <!-- ==========================================
+         PAGE VIEW 2: AI CREATOR'S STUDIO VIEW
+         ========================================== -->
+    <div class="page-view" id="aiStudioPage">
+      
+      <!-- Section 1 — Studio Hero -->
+      <section class="hero-section" style="padding-bottom: 8px;">
+        <h1>AI Creator's Studio</h1>
+        <h2 style="color: var(--color-mint)">Create. Vote. Win $WOORI.</h2>
+        
+        <!-- Highlighted Event Badge -->
+        <div class="event-period-badge">
+          <div class="event-badge-title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span>WOORI Creator Event Guidelines</span>
+          </div>
+          <div class="event-badge-grid">
+            <div class="event-badge-item">
+              <strong>🗓 Event Period:</strong>
+              <span>June 6, 2026 – July 6, 2026</span>
+            </div>
+            <div class="event-badge-item">
+              <strong>🏆 Prize:</strong>
+              <span>$WOORI Token Airdrop for Top Voted Creators</span>
+            </div>
+            <div class="event-badge-item">
+              <strong>📌 How to participate:</strong>
+              <span>Create K-Culture content using the AI tools below → Upload → Get community votes → Win</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 2 — AI Creator Tools (Two Separate Full-Width Visual Blocks) -->
+      
+      <!-- BLOCK 1: Music Creator -->
+      <div class="creator-block" id="musicCreatorBlock">
+        <div class="block-title-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+          <h3 class="block-title">Create K-Culture Music</h3>
+        </div>
+        
+        <div class="creator-form-layout">
+          <div class="form-inputs-side">
+            <div class="input-group">
+              <label class="input-label" for="studioMusicPrompt">Describe your K-Culture music</label>
+              <textarea class="text-textarea" id="studioMusicPrompt" placeholder="Describe your K-Culture music (e.g. upbeat K-pop summer anthem)"></textarea>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="studioMusicGenre">Select Genre</label>
+              <select class="styled-select" id="studioMusicGenre">
+                <option value="K-pop">K-pop</option>
+                <option value="Ballad">Ballad</option>
+                <option value="Hip-hop">Hip-hop</option>
+                <option value="OST">OST</option>
+                <option value="R&B">R&B</option>
+              </select>
+            </div>
+            <button class="btn-neon btn-mint" id="btnGenerateMusicStudio">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Generate Music</span>
+            </button>
+          </div>
+          
+          <div class="generator-output-side">
+            <div class="generator-output-card" id="studioMusicOutputCard">
+              <div class="empty-state-visual">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                <p>Configure parameters and click generate to synthesize your K-Culture track.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- BLOCK 2: Video Creator -->
+      <div class="creator-block" id="videoCreatorBlock">
+        <div class="block-title-row">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+          <h3 class="block-title">Create K-Culture Video</h3>
+        </div>
+        
+        <div class="creator-form-layout">
+          <div class="form-inputs-side">
+            <div class="input-group">
+              <label class="input-label" for="studioVideoPrompt">Describe your K-Culture video</label>
+              <textarea class="text-textarea" id="studioVideoPrompt" placeholder="Describe your K-Culture video (e.g. idol group performing on neon stage)"></textarea>
+            </div>
+            <div class="input-group">
+              <label class="input-label" for="studioVideoStyle">Select Visual Style</label>
+              <select class="styled-select" id="studioVideoStyle">
+                <option value="Cinematic">Cinematic</option>
+                <option value="Anime">Anime</option>
+                <option value="Realistic">Realistic</option>
+                <option value="Retro Korean">Retro Korean</option>
+              </select>
+            </div>
+            <button class="btn-neon btn-mint" id="btnGenerateVideoStudio">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              <span>Generate Video</span>
+            </button>
+          </div>
+          
+          <div class="generator-output-side">
+            <div class="generator-output-card" id="studioVideoOutputCard">
+              <div class="empty-state-visual">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="2" width="20" height="20" rx="2" ry="2"/><path d="M12 18V6M6 12h12"/></svg>
+                <p>Configure parameters and click generate to render your K-Culture video.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 3 — Competition Board inside Studio -->
+      <section class="board-section" style="border-top: 1px solid var(--glass-border); padding-top: 48px;">
+        <div class="board-header">
+          <div class="board-title-wrap">
+            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" stroke="url(#boardGlow2)" stroke-width="2" fill="none"/>
+              <defs>
+                <linearGradient id="boardGlow2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#00F5C4"/>
+                  <stop offset="100%" stop-color="#8B5CF6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <span class="board-title">Submissions</span>
+          </div>
+          <div class="filter-btn-group">
+            <button class="filter-btn active" id="studioSortLatestBtn">Latest</button>
+            <button class="filter-btn" id="studioSortVotedBtn">Top Voted</button>
+          </div>
+        </div>
+
+        <div class="submissions-grid" id="studioSubmissionsGrid">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+
+      <!-- Section 4 — Prize Info Banner -->
+      <footer class="bottom-prize-banner">
+        <h4 class="prize-banner-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6M18 9h1.5a2.5 2.5 0 0 0 0-5H18M4 22h16M10 14.66V17c0 .55-.45 1-1 1H4v2h16v-2h-5c-.55 0-1-.45-1-1v-2.34M12 2a4 4 0 0 0-4 4v5a4 4 0 0 0 8 0V6a4 4 0 0 0-4-4z"/></svg>
+          <span>WOORI Creator Prize Pool Airdrop</span>
+        </h4>
+        <p class="prize-banner-text">
+          Top 3 creators by votes receive $WOORI token airdrops. All submissions are reviewed by the WOORI community. Event runs June 6 – July 6, 2026.
+        </p>
+      </footer>
+    </div>
+
+    <!-- ==========================================
+         PAGE VIEW 3: FAQ / GUIDANCE VIEW
+         ========================================== -->
+    <div class="page-view" id="faqPage">
+      <section class="hero-section">
+        <h1>Frequently Asked Questions</h1>
+        <h2 style="color: var(--color-mint)">Everything you need to know about the Competition</h2>
+      </section>
+      
+      <div style="max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+        <div class="event-period-badge" style="max-width: 100%; margin: 0;">
+          <h4 style="color: #fff; font-family: var(--font-heading); margin-bottom: 8px;">1. What is $WOORI?</h4>
+          <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">$WOORI is the native blockchain utility token powering the Woori Foundation K-content ecosystem, rewarded to creators for community involvement and excellence in content creation.</p>
+        </div>
+        <div class="event-period-badge" style="max-width: 100%; margin: 0;">
+          <h4 style="color: #fff; font-family: var(--font-heading); margin-bottom: 8px;">2. How are the winners selected?</h4>
+          <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">Winners are selected entirely by the community! Submissions with the highest heart-upvote counts at the close of the event on July 6, 2026, will claim the top tiered token rewards.</p>
+        </div>
+        <div class="event-period-badge" style="max-width: 100%; margin: 0;">
+          <h4 style="color: #fff; font-family: var(--font-heading); margin-bottom: 8px;">3. Is there a wallet address requirement?</h4>
+          <p style="color: var(--text-secondary); font-size: 14px; line-height: 1.6;">No! Connecting or providing a wallet address is completely optional. However, you must provide a valid wallet address at some point to receive your airdrop if your submission ranks in the Top 3.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Shared Upload Modal -->
+  <div class="modal-overlay" id="uploadModal">
+    <div class="modal-window">
+      <button class="modal-close-btn" id="uploadModalClose">&times;</button>
+      <h3 class="modal-title">Upload to Competition</h3>
+      <p class="modal-subtitle">Submit your AI-generated K-Culture creation to the official leaderboard.</p>
+      
+      <form id="uploadForm">
+        <div class="input-group">
+          <label class="input-label" for="uploadTitle">Title</label>
+          <input type="text" class="form-input" id="uploadTitle" placeholder="e.g. Moonlight K-Pop Electro" required>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="uploadNickname">Creator Nickname</label>
+          <input type="text" class="form-input" id="uploadNickname" placeholder="e.g. NeoCreator_K" required>
+        </div>
+        <div class="input-group">
+          <label class="input-label" for="uploadWallet">K-Wallet Address (Optional, for airdrop)</label>
+          <input type="text" class="form-input" id="uploadWallet" placeholder="0x... (to receive your $WOORI tokens)">
+        </div>
+        <div style="margin-top: 24px; display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn-neon-ghost purple-ghost" id="btnCancelUpload">Cancel</button>
+          <button type="submit" class="btn-neon btn-mint">Upload to Competition Board</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Shared Detail Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal-window detail-window">
+      <button class="modal-close-btn" id="detailModalClose">&times;</button>
+      
+      <div class="detail-modal-layout" id="detailModalContent">
+        <!-- Rendered dynamically -->
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
