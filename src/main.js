@@ -520,9 +520,23 @@ function handleStudioGeneration(type) {
         prompt: finalPrompt
       })
     })
-    .then(response => {
+    .then(async response => {
       if (!response.ok) {
-        throw new Error('API server returned an error: ' + response.statusText);
+        let errorMsg = response.statusText || `Status ${response.status}`;
+        try {
+          const errData = await response.json();
+          if (errData && errData.message) {
+            errorMsg = errData.message;
+          } else if (errData && errData.error) {
+            errorMsg = errData.error;
+          }
+        } catch (e) {
+          try {
+            const errText = await response.text();
+            if (errText) errorMsg = errText;
+          } catch (e2) {}
+        }
+        throw new Error('API server returned an error: ' + errorMsg);
       }
       return response.json();
     })
