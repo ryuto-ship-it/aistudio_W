@@ -1,6 +1,36 @@
 import './style.css';
 import { seedSubmissions } from './seedData.js';
 
+// Firebase Integrations
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  setDoc, 
+  onSnapshot, 
+  runTransaction, 
+  getDocs,
+  query,
+  where
+} from 'firebase/firestore';
+
+// ethers.js v6 Browser Provider
+import { BrowserProvider } from 'ethers';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBbRUAutH1bXf2II7lmvJ4JaBq3FEYkP9s",
+  authDomain: "woori-d99a5.firebaseapp.com",
+  projectId: "woori-d99a5",
+  storageBucket: "woori-d99a5.firebasestorage.app",
+  messagingSenderId: "1093798164603",
+  appId: "1:1093798164603:web:5db9e229946c6d599d4ade"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
 // ==========================================
 // 1. STATE & ROUTING MANAGEMENT
 // ==========================================
@@ -8,6 +38,10 @@ let submissions = [];
 let upvotedIds = [];
 let currentlyGeneratedContent = null;
 let currentSort = 'latest'; // 'latest' or 'voted'
+
+// Web3 State variables
+let connectedAddress = null;
+let provider = null;
 
 // Local player references to manage single-instance playback
 let activeAudioElement = null;
@@ -65,26 +99,180 @@ const detailModal = document.getElementById('detailModal');
 const detailModalClose = document.getElementById('detailModalClose');
 const detailModalContent = document.getElementById('detailModalContent');
 
+// Connect Wallet Button
+const btnConnectWallet = document.getElementById('btnConnectWallet');
+
+// ==========================================
+// Web3 WALLET MANAGEMENT (ethers.js & MetaMask)
+// ==========================================
+async function handleWalletConnect() {
+  if (connectedAddress) {
+    // If clicked while connected, treat as disconnect
+    connectedAddress = null;
+    provider = null;
+    upvotedIds = [];
+    updateWalletButtonState();
+    
+    // Reset upload form wallet field
+    uploadWallet.value = '';
+    uploadWallet.readOnly = false;
+    
+    const hash = window.location.hash || '#/';
+    const activeView = hash === '#/ai-studio' ? 'studio' : 'home';
+    renderSubmissions(activeView);
+    return;
+  }
+
+  if (!window.ethereum) {
+    alert('MetaMask is not installed. Please install MetaMask to connect your wallet.');
+    return;
+  }
+
+  try {
+    btnConnectWallet.disabled = true;
+    btnConnectWallet.querySelector('span').textContent = 'Connecting...';
+
+    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+    connectedAddress = accounts[0];
+    provider = new BrowserProvider(window.ethereum);
+
+    updateWalletButtonState();
+    
+    // Auto-populate the Wallet input in the upload form
+    uploadWallet.value = connectedAddress;
+    uploadWallet.readOnly = true;
+
+    // Load liked submission IDs for this wallet from Firestore
+    await loadUserVotes();
+
+    // Re-render the submissions grid to highlight liked posts
+    const hash = window.location.hash || '#/';
+    const activeView = hash === '#/ai-studio' ? 'studio' : 'home';
+    renderSubmissions(activeView);
+
+  } catch (error) {
+    console.error('Wallet connection failed:', error);
+    alert('Failed to connect MetaMask: ' + (error.message || error));
+    connectedAddress = null;
+    provider = null;
+    updateWalletButtonState();
+  } finally {
+    btnConnectWallet.disabled = false;
+  }
+}
+
+function updateWalletButtonState() {
+  if (connectedAddress) {
+    const shortAddress = `${connectedAddress.substring(0, 6)}...${connectedAddress.substring(connectedAddress.length - 4)}`;
+    btnConnectWallet.style.background = 'linear-gradient(135deg, var(--color-mint), #00d4a9)';
+    btnConnectWallet.style.color = '#0d0b2a';
+    btnConnectWallet.querySelector('span').textContent = shortAddress;
+  } else {
+    btnConnectWallet.style.background = 'transparent';
+    btnConnectWallet.style.color = 'var(--color-mint)';
+    btnConnectWallet.querySelector('span').textContent = 'Connect Wallet';
+  }
+}
+
+async function checkExistingWalletConnection() {
+  if (window.ethereum) {
+    try {
+      const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+      if (accounts.length > 0) {
+        connectedAddress = accounts[0];
+        provider = new BrowserProvider(window.ethereum);
+        updateWalletButtonState();
+        uploadWallet.value = connectedAddress;
+        uploadWallet.readOnly = true;
+
+        await loadUserVotes();
+        
+        const hash = window.location.hash || '#/';
+        const activeView = hash === '#/ai-studio' ? 'studio' : 'home';
+        renderSubmissions(activeView);
+      }
+    } catch (e) {
+      console.error('Error checking existing wallet connection:', e);
+    }
+  }
+}
+
+async function loadUserVotes() {
+  if (!connectedAddress) {
+    upvotedIds = [];
+    return;
+  }
+  try {
+    const votesRef = collection(db, 'votes');
+    const q = query(votesRef, where('wallet', '==', connectedAddress.toLowerCase()));
+    const querySnapshot = await getDocs(q);
+    upvotedIds = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (data.submissionId) {
+        upvotedIds.push(data.submissionId);
+      }
+    });
+  } catch (error) {
+    console.error('Error loading user votes:', error);
+  }
+}
+
+// ==========================================
+// FIRESTORE REAL-TIME SYNC
+// ==========================================
+function setupSubmissionsListener() {
+  const submissionsRef = collection(db, 'submissions');
+  
+  onSnapshot(submissionsRef, async (querySnapshot) => {
+    if (querySnapshot.empty) {
+      console.log('Firestore submissions collection is empty. Seeding data...');
+      // Seed data into Firestore submissions collection
+      for (const item of seedSubmissions) {
+        try {
+          await setDoc(doc(db, 'submissions', item.id), {
+            title: item.title,
+            creator: item.creator,
+            wallet: item.wallet,
+            type: item.type,
+            genre: item.genre || null,
+            style: item.style || null,
+            prompt: item.prompt,
+            mediaUrl: item.mediaUrl,
+            thumbnail: item.thumbnail,
+            votes: item.votes,
+            timestamp: typeof item.timestamp === 'number' ? item.timestamp : Date.now()
+          });
+        } catch (e) {
+          console.error('Error seeding item:', e);
+        }
+      }
+      return; // The listener will fire again once documents are written
+    }
+
+    const fetchedSubmissions = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      fetchedSubmissions.push({
+        id: docSnap.id,
+        ...data
+      });
+    });
+
+    submissions = fetchedSubmissions;
+    updateGlobalMetrics();
+
+    // Re-render the active view
+    const hash = window.location.hash || '#/';
+    const activeView = hash === '#/ai-studio' ? 'studio' : 'home';
+    renderSubmissions(activeView);
+  });
+}
+
 // ==========================================
 // 3. INITIALIZATION & ROUTING ENGINE
 // ==========================================
 function init() {
-  // Load submissions from LocalStorage or seed data
-  const cachedSubmissions = localStorage.getItem('woori_submissions');
-  if (cachedSubmissions) {
-    submissions = JSON.parse(cachedSubmissions);
-  } else {
-    // Add seed data if empty
-    submissions = [...seedSubmissions];
-    localStorage.setItem('woori_submissions', JSON.stringify(submissions));
-  }
-
-  // Load upvoted tracking list
-  const cachedVoted = localStorage.getItem('woori_voted');
-  if (cachedVoted) {
-    upvotedIds = JSON.parse(cachedVoted);
-  }
-
   // Bind router hash changes
   window.addEventListener('hashchange', handleRoute);
   handleRoute(); // Execute routing for initial landing page load
@@ -92,8 +280,38 @@ function init() {
   // Setup generic dynamic handlers
   setupGlobalEventListeners();
 
-  // Draw submissions and counts
-  updateGlobalMetrics();
+  // Attach Wallet Connection Click Handler
+  btnConnectWallet.addEventListener('click', handleWalletConnect);
+
+  // Setup MetaMask chain/account event listeners
+  if (window.ethereum) {
+    window.ethereum.on('accountsChanged', async (accounts) => {
+      if (accounts.length > 0) {
+        connectedAddress = accounts[0];
+        provider = new BrowserProvider(window.ethereum);
+        updateWalletButtonState();
+        uploadWallet.value = connectedAddress;
+        uploadWallet.readOnly = true;
+        await loadUserVotes();
+      } else {
+        connectedAddress = null;
+        provider = null;
+        updateWalletButtonState();
+        uploadWallet.value = '';
+        uploadWallet.readOnly = false;
+        upvotedIds = [];
+      }
+      const hash = window.location.hash || '#/';
+      const activeView = hash === '#/ai-studio' ? 'studio' : 'home';
+      renderSubmissions(activeView);
+    });
+  }
+
+  // Check if wallet is already connected
+  checkExistingWalletConnection();
+
+  // Initialize Firestore listener
+  setupSubmissionsListener();
 }
 
 // Router to handle Dynamic SPA transitions
@@ -474,7 +692,14 @@ function openUploadModal() {
 
   uploadTitle.value = `${currentlyGeneratedContent.genreOrStyle} ${currentlyGeneratedContent.titleSuffix}`;
   uploadNickname.value = '';
-  uploadWallet.value = '';
+  
+  if (connectedAddress) {
+    uploadWallet.value = connectedAddress;
+    uploadWallet.readOnly = true;
+  } else {
+    uploadWallet.value = '';
+    uploadWallet.readOnly = false;
+  }
 
   uploadModal.classList.add('open');
 }
@@ -483,7 +708,7 @@ function closeUploadModal() {
   uploadModal.classList.remove('open');
 }
 
-function handleUploadSubmit(e) {
+async function handleUploadSubmit(e) {
   e.preventDefault();
 
   const title = uploadTitle.value.trim();
@@ -495,42 +720,48 @@ function handleUploadSubmit(e) {
     return;
   }
 
-  // Pre-load new upload card
+  const id = `submission-${Date.now()}`;
   const newSubmission = {
-    id: `submission-${Date.now()}`,
     title: title,
     creator: creator,
-    wallet: wallet.length > 10 ? `${wallet.substring(0, 5)}...${wallet.substring(wallet.length - 4)}` : wallet,
+    wallet: wallet,
     type: currentlyGeneratedContent.type,
     genre: currentlyGeneratedContent.type === 'music' ? currentlyGeneratedContent.genreOrStyle : undefined,
     style: currentlyGeneratedContent.type === 'video' ? currentlyGeneratedContent.genreOrStyle : undefined,
     prompt: currentlyGeneratedContent.prompt,
     mediaUrl: currentlyGeneratedContent.mediaUrl,
     thumbnail: currentlyGeneratedContent.thumbnail,
-    votes: 1, // Start with positive self-vote
+    votes: 0,
     timestamp: Date.now()
   };
 
-  submissions.unshift(newSubmission);
-  upvotedIds.push(newSubmission.id);
+  try {
+    const submitBtn = uploadForm.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Uploading...';
 
-  // Cache updates
-  localStorage.setItem('woori_submissions', JSON.stringify(submissions));
-  localStorage.setItem('woori_voted', JSON.stringify(upvotedIds));
+    await setDoc(doc(db, 'submissions', id), newSubmission);
 
-  resetCreatorForms();
-  closeUploadModal();
-  updateGlobalMetrics();
+    resetCreatorForms();
+    closeUploadModal();
 
-  // Force render current active page submissions board
-  const hash = window.location.hash || '#/';
-  if (hash === '#/ai-studio') {
-    renderSubmissions('studio');
     // Scroll smoothly to submissions board
-    document.querySelector('#aiStudioPage .board-section').scrollIntoView({ behavior: 'smooth' });
-  } else {
-    renderSubmissions('home');
-    document.querySelector('#homePage .board-section').scrollIntoView({ behavior: 'smooth' });
+    const hash = window.location.hash || '#/';
+    if (hash === '#/ai-studio') {
+      document.querySelector('#aiStudioPage .board-section').scrollIntoView({ behavior: 'smooth' });
+    } else {
+      document.querySelector('#homePage .board-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+  } catch (err) {
+    console.error('Upload failed:', err);
+    alert('Failed to upload submission: ' + err.message);
+  } finally {
+    const submitBtn = uploadForm.querySelector('button[type="submit"]');
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Upload to Competition Board';
+    }
   }
 }
 
@@ -667,55 +898,120 @@ function renderSubmissions(view = 'home') {
   });
 }
 
-function handleVoteToggle(id, btnElement, view) {
+async function handleVoteToggle(id, btnElement, view) {
+  if (!connectedAddress) {
+    alert('Please connect your MetaMask wallet to vote.');
+    handleWalletConnect();
+    return;
+  }
+
   const item = submissions.find(s => s.id === id);
   if (!item) return;
 
-  const idx = upvotedIds.indexOf(id);
-  const isLiked = idx === -1;
+  const walletLower = connectedAddress.toLowerCase();
+  const voteDocId = `${walletLower}_${id}`;
+  const voteDocRef = doc(db, 'votes', voteDocId);
+  const submissionDocRef = doc(db, 'submissions', id);
 
-  if (isLiked) {
+  const idx = upvotedIds.indexOf(id);
+  const isLiking = idx === -1;
+
+  // Optimistic UI update
+  if (isLiking) {
     upvotedIds.push(id);
     item.votes++;
   } else {
     upvotedIds.splice(idx, 1);
     item.votes--;
   }
+  updateVoteUI(id, item.votes, isLiking);
 
-  // Persist State
-  localStorage.setItem('woori_submissions', JSON.stringify(submissions));
-  localStorage.setItem('woori_voted', JSON.stringify(upvotedIds));
+  try {
+    await runTransaction(db, async (transaction) => {
+      const voteDocSnap = await transaction.get(voteDocRef);
+      const submissionDocSnap = await transaction.get(submissionDocRef);
 
+      if (!submissionDocSnap.exists()) {
+        throw new Error('Submission does not exist.');
+      }
+
+      const currentVotes = submissionDocSnap.data().votes || 0;
+
+      if (isLiking) {
+        if (voteDocSnap.exists()) {
+          throw new Error('Already voted.');
+        }
+        transaction.set(voteDocRef, {
+          wallet: walletLower,
+          submissionId: id,
+          timestamp: Date.now()
+        });
+        transaction.update(submissionDocRef, {
+          votes: currentVotes + 1
+        });
+      } else {
+        if (!voteDocSnap.exists()) {
+          throw new Error('No vote to remove.');
+        }
+        transaction.delete(voteDocRef);
+        transaction.update(submissionDocRef, {
+          votes: Math.max(0, currentVotes - 1)
+        });
+      }
+    });
+
+    console.log('Vote updated successfully in database.');
+
+  } catch (error) {
+    console.error('Voting transaction failed:', error);
+    // Revert UI on failure
+    if (isLiking) {
+      upvotedIds.splice(upvotedIds.indexOf(id), 1);
+      item.votes--;
+    } else {
+      upvotedIds.push(id);
+      item.votes++;
+    }
+    updateVoteUI(id, item.votes, !isLiking);
+    alert('Voting failed: ' + error.message);
+  }
+}
+
+function updateVoteUI(id, votesCount, isLiked) {
   // Sync vote tallies in both potential grid elements
   const homeCountText = document.getElementById(`voteCount-home-${id}`);
   const studioCountText = document.getElementById(`voteCount-studio-${id}`);
-  if (homeCountText) homeCountText.textContent = item.votes;
-  if (studioCountText) studioCountText.textContent = item.votes;
-
-  // Toggle CSS active states on the button element clicked
-  if (btnElement) {
-    if (isLiked) {
-      btnElement.classList.add('voted');
-      btnElement.querySelector('span').textContent = 'Liked';
-    } else {
-      btnElement.classList.remove('voted');
-      btnElement.querySelector('span').textContent = 'Like';
-    }
-  }
+  if (homeCountText) homeCountText.textContent = votesCount;
+  if (studioCountText) studioCountText.textContent = votesCount;
 
   // Update Detail modal overlays if open
   const modalVoteBtn = document.getElementById(`modalVoteBtn-${id}`);
   const modalVoteCount = document.getElementById(`modalVoteCount-${id}`);
   if (modalVoteBtn && modalVoteCount) {
-    modalVoteCount.textContent = item.votes;
+    modalVoteCount.textContent = votesCount;
     if (isLiked) {
       modalVoteBtn.classList.add('voted');
       modalVoteBtn.querySelector('span').textContent = 'Liked';
     } else {
       modalVoteBtn.classList.remove('voted');
-      modalVoteBtn.querySelector('span').textContent = 'Like';
+      modalVoteBtn.querySelector('span').textContent = 'Like Work';
     }
   }
+
+  // Sync active states on grids
+  const cards = document.querySelectorAll(`.submission-card[data-id="${id}"]`);
+  cards.forEach(card => {
+    const btn = card.querySelector('.btn-vote');
+    if (btn) {
+      if (isLiked) {
+        btn.classList.add('voted');
+        btn.querySelector('span').textContent = 'Liked';
+      } else {
+        btn.classList.remove('voted');
+        btn.querySelector('span').textContent = 'Like';
+      }
+    }
+  });
 
   updateGlobalMetrics();
 }
@@ -774,6 +1070,10 @@ function openDetailModal(id) {
     `;
   }
 
+  const formattedWallet = item.wallet && item.wallet !== 'No Wallet' && item.wallet.length > 10
+    ? `${item.wallet.substring(0, 6)}...${item.wallet.substring(item.wallet.length - 4)}`
+    : item.wallet;
+
   detailModalContent.innerHTML = `
     <div class="detail-media-wrap">
       ${mediaMarkup}
@@ -781,7 +1081,7 @@ function openDetailModal(id) {
     <div class="detail-content-wrap">
       <div class="detail-tag-row">
         <span class="detail-meta-pill" style="color: var(--color-mint); border-color: rgba(0, 245, 196, 0.25); background: rgba(0, 245, 196, 0.05);">${badgeText}</span>
-        <span class="detail-meta-pill">Submission ID: ${item.id.substring(11)}</span>
+        <span class="detail-meta-pill">Submission ID: ${item.id.includes('submission-') ? item.id.substring(11) : item.id}</span>
       </div>
       
       <h2 class="detail-title">${item.title}</h2>
@@ -789,7 +1089,7 @@ function openDetailModal(id) {
       
       <div class="detail-wallet-row">
         <svg viewBox="0 0 24 24" width="14" height="14"><path d="M21 18V19C21 20.1 20.1 21 19 21H5C3.89 21 3 20.1 3 19V5C3 3.9 3.89 3 5 3H19C20.1 3 21 3.9 21 5V6H12C10.9 6 10 6.9 10 8V16C10 17.1 10.9 18 12 18H21ZM12 16H22V8H12V16ZM16 13.5C15.17 13.5 14.5 12.83 14.5 12C14.5 11.17 15.17 10.5 16 10.5C16.83 10.5 17.5 11.17 17.5 12C17.5 12.83 16.83 13.5 16 13.5Z"/></svg>
-        <span>Airdrop Wallet Address: ${item.wallet}</span>
+        <span>Airdrop Wallet Address: ${formattedWallet}</span>
       </div>
       
       <div class="detail-prompt-box">

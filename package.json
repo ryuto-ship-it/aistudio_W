@@ -11,5 +11,9 @@
   "devDependencies": {
     "gh-pages": "^6.3.0",
     "vite": "^5.2.11"
+  },
+  "dependencies": {
+    "ethers": "^6.16.0",
+    "firebase": "^12.14.0"
   }
 }
