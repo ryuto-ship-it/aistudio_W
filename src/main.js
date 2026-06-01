@@ -528,7 +528,13 @@ function handleStudioGeneration(type) {
           if (errData && errData.message) {
             errorMsg = errData.message;
           } else if (errData && errData.error) {
-            errorMsg = errData.error;
+            if (typeof errData.error === 'object') {
+              errorMsg = errData.error.message || errData.error.code || JSON.stringify(errData.error);
+            } else {
+              errorMsg = errData.error;
+            }
+          } else {
+            errorMsg = JSON.stringify(errData);
           }
         } catch (e) {
           try {
