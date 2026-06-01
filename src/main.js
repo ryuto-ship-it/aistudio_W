@@ -225,34 +225,10 @@ function setupSubmissionsListener() {
   const submissionsRef = collection(db, 'submissions');
   
   onSnapshot(submissionsRef, async (querySnapshot) => {
-    const fetchedSubmissions = [];
-    const existingIds = new Set();
-
-    querySnapshot.forEach((docSnap) => {
-      const data = docSnap.data();
-      existingIds.add(docSnap.id);
-      fetchedSubmissions.push({
-        id: docSnap.id,
-        title: data.title,
-        creator: data.creator,
-        wallet: data.wallet,
-        type: data.type,
-        genre: data.genre || undefined,
-        style: data.style || undefined,
-        prompt: data.prompt,
-        mediaUrl: data.mediaUrl,
-        thumbnail: data.thumbnail,
-        votes: data.votes,
-        timestamp: data.timestamp
-      });
-    });
-
-    // Smart seed: Check if any seed items are missing (e.g. newly added video items) and upload them
-    let missingSeeded = false;
-    for (const item of seedSubmissions) {
-      if (!existingIds.has(item.id)) {
-        console.log(`Seeding missing item: ${item.id}`);
-        missingSeeded = true;
+    // If the database has fewer than 10 documents, force seed all 10 premium K-Culture items!
+    if (querySnapshot.size < 10) {
+      console.log('Database has fewer than 10 documents. Force seeding 10 premium K-Culture items...');
+      for (const item of seedSubmissions) {
         try {
           await setDoc(doc(db, 'submissions', item.id), {
             title: item.title,
@@ -268,14 +244,30 @@ function setupSubmissionsListener() {
             timestamp: typeof item.timestamp === 'number' ? item.timestamp : Date.now()
           });
         } catch (e) {
-          console.error('Error seeding item:', e);
+          console.error('Error force seeding item:', e);
         }
       }
+      return; // Let the next snapshot handle the populated documents
     }
 
-    if (missingSeeded) {
-      return; // Let the next snapshot handle the updated collection state
-    }
+    const fetchedSubmissions = [];
+    querySnapshot.forEach((docSnap) => {
+      const data = docSnap.data();
+      fetchedSubmissions.push({
+        id: docSnap.id,
+        title: data.title,
+        creator: data.creator,
+        wallet: data.wallet,
+        type: data.type,
+        genre: data.genre || undefined,
+        style: data.style || undefined,
+        prompt: data.prompt,
+        mediaUrl: data.mediaUrl,
+        thumbnail: data.thumbnail,
+        votes: data.votes,
+        timestamp: data.timestamp
+      });
+    });
 
     submissions = fetchedSubmissions;
     updateGlobalMetrics();
