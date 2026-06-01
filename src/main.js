@@ -509,8 +509,8 @@ function handleStudioGeneration(type) {
     const finalPrompt = `${stylePrefix}${prompt}`;
     const apiKey = "c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2";
 
-    // Call Muapi Text-to-Video API
-    fetch('https://api.muapi.ai/api/v1/ltx-2-fast-text-to-video', {
+    // Call Muapi Text-to-Video API via CORS proxy
+    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/ltx-2-fast-text-to-video', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
@@ -549,7 +549,7 @@ function handleStudioGeneration(type) {
 function pollVideoResult(requestId, prompt, style, apiKey) {
   const statusLabel = document.getElementById('videoLoaderStatus');
   let pollInterval = setInterval(() => {
-    fetch(`https://api.muapi.ai/api/v1/predictions/${requestId}/result`, {
+    fetch(`https://corsproxy.io/?url=https://api.muapi.ai/api/v1/predictions/${requestId}/result`, {
       headers: {
         'x-api-key': apiKey
       }
