@@ -505,64 +505,21 @@ function handleStudioGeneration(type) {
       'Retro Korean': 'vintage 1990s Korean television drama aesthetic, colorful warm VHS scanlines, nostalgic classic tone, '
     };
 
-    const stylePrefix = stylePrompts[style] || '';
-    const finalPrompt = `${stylePrefix}${prompt}`;
-    const apiKey = "c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2";
-
-    // Call Muapi Text-to-Video API via CORS proxy
-    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/ltx-2-fast-text-to-video', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        prompt: finalPrompt
-      })
-    })
-    .then(async response => {
-      if (!response.ok) {
-        let errorMsg = response.statusText || `Status ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData && errData.message) {
-            errorMsg = errData.message;
-          } else if (errData && errData.error) {
-            if (typeof errData.error === 'object') {
-              errorMsg = errData.error.message || errData.error.code || JSON.stringify(errData.error);
-            } else {
-              errorMsg = errData.error;
-            }
-          } else {
-            errorMsg = JSON.stringify(errData);
-          }
-        } catch (e) {
-          try {
-            const errText = await response.text();
-            if (errText) errorMsg = errText;
-          } catch (e2) {}
-        }
-        throw new Error('API server returned an error: ' + errorMsg);
-      }
-      return response.json();
-    })
-    .then(data => {
-      if (!data.request_id) {
-        throw new Error('Invalid response structure from Muapi AI.');
-      }
-      const requestId = data.request_id;
-      pollVideoResult(requestId, prompt, style, apiKey);
-    })
-    .catch(err => {
-      console.error('Muapi Generation Error:', err);
+    setTimeout(() => {
       btnGenerateVideoStudio.disabled = false;
-      studioVideoOutputCard.innerHTML = `
-        <div style="color: #ef4444; padding: 16px;">
-          <p>Generation failed: ${err.message}</p>
-          <button class="btn-neon-ghost purple-ghost" onclick="resetCreatorForms()" style="margin-top: 12px; padding: 8px 16px; font-size: 12px;">Reset</button>
-        </div>
-      `;
-    });
+      const choice = mockVideoData[style] || mockVideoData['Cinematic'];
+
+      currentlyGeneratedContent = {
+        type: 'video',
+        prompt: prompt,
+        genreOrStyle: style,
+        mediaUrl: choice.url,
+        thumbnail: choice.thumb,
+        titleSuffix: choice.titleSuffix
+      };
+
+      renderVideoResultStudio();
+    }, 2500);
   }
 }
 
