@@ -2174,8 +2174,8 @@ This typically indicates that your device does not have a healthy Internet conne
       </button>
     </div>
   `,l2(),document.getElementById("btnUploadStudioTrigger").addEventListener("click",PE)}function c2(){pi.classList.add("active-result"),pi.innerHTML=`
-    <div class="custom-video-player-wrap" style="animation: fadeIn 0.4s ease;">
-      <video id="videoElementStudio" src="${qt.mediaUrl}" loop controls playsinline autoplay></video>
+    <div class="custom-video-player-wrap" style="animation: fadeIn 0.4s ease; background: #000; border-radius: 8px; overflow: hidden;">
+      <video id="videoElementStudio" src="${qt.mediaUrl}" loop controls playsinline autoplay muted style="width: 100%; display: block;"></video>
     </div>
     <div class="generator-actions">
       <button class="btn-neon btn-mint" style="width: 100%;" id="btnUploadStudioTrigger">
