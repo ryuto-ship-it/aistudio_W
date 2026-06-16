@@ -508,17 +508,14 @@ function handleStudioGeneration(type) {
     const apiKey = 'c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2';
     const fullPrompt = stylePrompts[style] + prompt;
 
-    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/predictions', {
+    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/veo3-fast-text-to-video', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'x-api-key': apiKey
       },
       body: JSON.stringify({
-        model: 'kling-video',
-        input: {
-          prompt: fullPrompt
-        }
+        prompt: fullPrompt
       })
     })
     .then(res => res.json())
