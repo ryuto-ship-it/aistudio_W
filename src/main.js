@@ -547,10 +547,11 @@ function handleStudioGeneration(type) {
 function pollVideoResult(requestId, prompt, style, apiKey) {
   const statusLabel = document.getElementById('videoLoaderStatus');
   let pollInterval = setInterval(() => {
-    fetch(`https://corsproxy.io/?url=https://api.muapi.ai/api/v1/predictions/${requestId}/result`, {
+    fetch(`https://corsproxy.io/?url=https://api.muapi.ai/api/v1/predictions/${requestId}/result&_t=${Date.now()}`, {
       headers: {
         'x-api-key': apiKey
-      }
+      },
+      cache: 'no-store'
     })
     .then(response => response.json())
     .then(data => {
