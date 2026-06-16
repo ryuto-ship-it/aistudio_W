@@ -505,21 +505,40 @@ function handleStudioGeneration(type) {
       'Retro Korean': 'vintage 1990s Korean television drama aesthetic, colorful warm VHS scanlines, nostalgic classic tone, '
     };
 
-    setTimeout(() => {
+    const apiKey = 'c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2';
+    const fullPrompt = stylePrompts[style] + prompt;
+
+    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/predictions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey
+      },
+      body: JSON.stringify({
+        model: 'kling-video',
+        input: {
+          prompt: fullPrompt
+        }
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.id) {
+        pollVideoResult(data.id, prompt, style, apiKey);
+      } else {
+        throw new Error(data.error || 'Failed to start generation');
+      }
+    })
+    .catch(err => {
+      console.error('Muapi Generation Error:', err);
       btnGenerateVideoStudio.disabled = false;
-      const choice = mockVideoData[style] || mockVideoData['Cinematic'];
-
-      currentlyGeneratedContent = {
-        type: 'video',
-        prompt: prompt,
-        genreOrStyle: style,
-        mediaUrl: choice.url,
-        thumbnail: choice.thumb,
-        titleSuffix: choice.titleSuffix
-      };
-
-      renderVideoResultStudio();
-    }, 2500);
+      studioVideoOutputCard.innerHTML = `
+        <div style="color: #ef4444; padding: 16px;">
+          <p>Generation failed: ${err.message}</p>
+          <button class="btn-neon-ghost purple-ghost" onclick="resetCreatorForms()" style="margin-top: 12px; padding: 8px 16px; font-size: 12px;">Reset</button>
+        </div>
+      `;
+    });
   }
 }
 
