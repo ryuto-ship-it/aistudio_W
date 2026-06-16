@@ -520,8 +520,9 @@ function handleStudioGeneration(type) {
     })
     .then(res => res.json())
     .then(data => {
-      if (data.id) {
-        pollVideoResult(data.id, prompt, style, apiKey);
+      const requestId = data.request_id || data.id;
+      if (requestId) {
+        pollVideoResult(requestId, prompt, style, apiKey);
       } else {
         throw new Error(data.error || 'Failed to start generation');
       }
