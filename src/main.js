@@ -512,7 +512,7 @@ function handleStudioGeneration(type) {
     const apiKey = 'c305ec20cd5e1c97a7f92b22f9a3f8c5d53f0bce72485483089822e5303962d2';
     const fullPrompt = stylePrompts[style] + prompt;
 
-    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/veo3-fast-text-to-video', {
+    fetch('https://corsproxy.io/?url=https://api.muapi.ai/api/v1/seedance-lite-t2v', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
