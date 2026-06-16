@@ -448,6 +448,10 @@ const mockVideoData = {
 };
 
 function handleStudioGeneration(type) {
+  if (!connectedAddress) {
+    alert('Please connect your MetaMask wallet first to use the AI Creator Studio!');
+    return;
+  }
   stopActivePlayback();
 
   if (type === 'music') {
@@ -777,16 +781,16 @@ function formatTime(secs) {
 function openUploadModal() {
   if (!currentlyGeneratedContent) return;
 
+  if (!connectedAddress) {
+    alert('Please connect your MetaMask wallet to upload your submission.');
+    return;
+  }
+
   uploadTitle.value = `${currentlyGeneratedContent.genreOrStyle} ${currentlyGeneratedContent.titleSuffix}`;
   uploadNickname.value = '';
   
-  if (connectedAddress) {
-    uploadWallet.value = connectedAddress;
-    uploadWallet.readOnly = true;
-  } else {
-    uploadWallet.value = '';
-    uploadWallet.readOnly = false;
-  }
+  uploadWallet.value = connectedAddress;
+  uploadWallet.readOnly = true;
 
   uploadModal.classList.add('open');
 }
@@ -800,10 +804,15 @@ async function handleUploadSubmit(e) {
 
   const title = uploadTitle.value.trim();
   const creator = uploadNickname.value.trim();
-  const wallet = uploadWallet.value.trim() || 'No Wallet';
+  const wallet = uploadWallet.value.trim();
 
   if (!title || !creator) {
     alert('Please enter a valid title and creator nickname.');
+    return;
+  }
+
+  if (!wallet) {
+    alert('A connected MetaMask wallet is required to upload.');
     return;
   }
 
