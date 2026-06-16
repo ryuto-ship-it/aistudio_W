@@ -2197,11 +2197,11 @@ This typically indicates that your device does not have a healthy Internet conne
       <div style="grid-column: 1 / -1; text-align: center; padding: 48px; color: var(--text-muted);">
         <p>No submissions uploaded yet. Be the first to create and submit!</p>
       </div>
-    `;return}t.innerHTML=e.map(i=>{const o=He.includes(i.id),c=i.type==="music"?`🎵 ${i.genre}`:`🎬 ${i.style}`,l=i.type==="music"?"badge-music":"badge-video";return`
+    `;return}t.innerHTML=e.map(i=>{const o=He.includes(i.id),c=i.type==="music"?`🎵 ${i.genre}`:`🎬 ${i.style}`,l=i.type==="music"?"badge-music":"badge-video",u=i.type==="video"?`<video class="card-thumbnail" src="${i.mediaUrl}#t=0.1" preload="metadata" muted playsinline style="object-fit: cover; width: 100%; height: 100%; position: absolute; top: 0; left: 0;"></video>`:`<img class="card-thumbnail" src="${i.thumbnail}" alt="${i.title}">`;return`
       <div class="submission-card" data-id="${i.id}">
         <div class="card-media-preview">
           <span class="card-badge ${l}">${c}</span>
-          <img class="card-thumbnail" src="${i.thumbnail}" alt="${i.title}">
+          ${u}
           <div class="card-play-overlay">
             <button class="btn-play-circle">
               <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
